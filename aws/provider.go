@@ -15,7 +15,7 @@ func Provider() terraform.ResourceProvider {
 	// TODO: Move the configuration to this, requires validation
 
 	// The actual provider
-	return &schema.Provider{
+	provider := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"access_key": {
 				Type:        schema.TypeString,
@@ -813,8 +813,18 @@ func Provider() terraform.ResourceProvider {
 			"aws_alb_target_group_attachment": resourceAwsLbTargetGroupAttachment(),
 			"aws_lb_target_group_attachment":  resourceAwsLbTargetGroupAttachment(),
 		},
-		ConfigureFunc: providerConfigure,
 	}
+
+	provider.ConfigureFunc = func(d *schema.ResourceData) (interface{}, error) {
+		if provider.TerraformVersion == "" {
+			// Field was introduce to the protocol in 0.12
+			// therefore we can safely assume it's 0.10 or 0.11
+			provider.TerraformVersion = "0.11+compatible"
+		}
+		return providerConfigure(d, provider.TerraformVersion)
+	}
+
+	return provider
 }
 
 var descriptions map[string]string
@@ -1005,7 +1015,7 @@ func init() {
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(d *schema.ResourceData, tfVersion string) (interface{}, error) {
 	config := Config{
 		AccessKey:               d.Get("access_key").(string),
 		SecretKey:               d.Get("secret_key").(string),
@@ -1021,6 +1031,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		SkipRequestingAccountId: d.Get("skip_requesting_account_id").(bool),
 		SkipMetadataApiCheck:    d.Get("skip_metadata_api_check").(bool),
 		S3ForcePathStyle:        d.Get("s3_force_path_style").(bool),
+		TerraformVersion:        tfVersion,
 	}
 
 	// Set CredsFilename, expanding home directory

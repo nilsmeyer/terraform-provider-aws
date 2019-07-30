@@ -131,7 +131,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/xray"
 	awsbase "github.com/hashicorp/aws-sdk-go-base"
 	"github.com/hashicorp/terraform/helper/logging"
-	"github.com/hashicorp/terraform/terraform"
 )
 
 type Config struct {
@@ -160,6 +159,8 @@ type Config struct {
 	SkipRequestingAccountId bool
 	SkipMetadataApiCheck    bool
 	S3ForcePathStyle        bool
+
+	TerraformVersion string
 }
 
 type AWSClient struct {
@@ -322,7 +323,7 @@ func (c *Config) Client() (interface{}, error) {
 		UserAgentProducts: []*awsbase.UserAgentProduct{
 			{Name: "APN", Version: "1.0"},
 			{Name: "HashiCorp", Version: "1.0"},
-			{Name: "Terraform", Version: terraform.VersionString()},
+			{Name: "Terraform", Version: c.TerraformVersion},
 		},
 	}
 
